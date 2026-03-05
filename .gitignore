@@ -1,0 +1,24 @@
+# Visual Studio files
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.swp
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+[Bb]in/
+[Oo]bj/
+
+# Backup files
+*.bak
+backup_*.json
+
+# Project-specific
+*.csproj.user
+*.csproj.user.*
