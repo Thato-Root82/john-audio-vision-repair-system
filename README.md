@@ -43,10 +43,18 @@ The application automatically:
 - JSON serialization
 - Event-driven programming
 
-## 🔮 Future Improvements
-- SQL Server integration
-- Reporting/export functionality
-- Web-based version (ASP.NET Core MVC)
+## How to Run
+
+1. Clone the repository
+
+git clone https://github.com/Thato-Root82/john-audio-vision-repair-system.git
+
+2. Open the solution file
+
+John Audio Vision(FromsApp).sln
+
+3. Run the project in Visual Studio
+
 
 ## 👨‍💻 Author
 Thato Kamohelo Mofokeng  
