@@ -317,7 +317,7 @@ namespace John_Audio_Vision_FromsApp_
             if (job == null)
                 return;
 
-            // Fill fields for preview (NOT editing yet)
+            // Fill fields (where to get values)
             Clientnames.Text = job.ClientName;
             txtContact.Text = job.Contact;
             txtAddress.Text = job.Address;
@@ -363,13 +363,13 @@ namespace John_Audio_Vision_FromsApp_
             btnDelete.Enabled = true;
 
             // Reset colors
-            Enterbutton.BackColor = SystemColors.Control;
-            btnDelete.BackColor = SystemColors.Control;
-            edit_button.BackColor = SystemColors.Control;
+            Enterbutton.BackColor = Color.Green;
+            btnDelete.BackColor = Color.Red;
+            edit_button.BackColor = Color.Orange;
 
             // Change back to Edit button
             edit_button.Text = "EDIT";
-            edit_button.BackColor = SystemColors.Control;
+            edit_button.BackColor = Color.Orange;
 
             RecordsGrid.ClearSelection();
         }
