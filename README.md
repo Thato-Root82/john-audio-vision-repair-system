@@ -43,6 +43,21 @@ The application automatically:
 - JSON serialization
 - Event-driven programming
 
+## 📸 Screenshots
+
+### Main Application
+![Main Window](screenshots/main.png)
+
+### Search Function
+![Search Feature](screenshots/search.png)
+
+### Edit Mode
+![Edit Mode](screenshots/editmode.png)
+
+### Completed Jobs Highlight
+![Finished Jobs](screenshots/finished.png)
+
+
 ## How to Run
 
 1. Clone the repository
