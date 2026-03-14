@@ -1,4 +1,5 @@
 using Microsoft.VisualBasic;
+using System;
 using System.IO;// added for saving and loading data
 using System.Linq; // added since i am using LINQ for filtering
 using System.Media;
@@ -17,7 +18,7 @@ namespace John_Audio_Vision_FromsApp_
 
 
 
-        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),"JohnAudioVision","jobs.json");//global variable for storing our data
+        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JohnAudioVision", "jobs.json");//global variable for storing our data
 
         //saving our data
         private void SaveJobs()
@@ -48,6 +49,9 @@ namespace John_Audio_Vision_FromsApp_
         {
             InitializeComponent();
 
+            // connect the Shown event
+            this.Shown += Form1_Shown;
+
             // CREATE DIRECTORY HERE - RIGHT AFTER InitializeComponent()
             string directory = Path.GetDirectoryName(filePath);
             if (!Directory.Exists(directory))
@@ -56,6 +60,11 @@ namespace John_Audio_Vision_FromsApp_
             }
 
             LoadJobs();
+            RefreshGrid();
+        }
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            // Force a refresh of the grid after the form is fully visible
             RefreshGrid();
         }
         //Loading our data
@@ -188,15 +197,33 @@ namespace John_Audio_Vision_FromsApp_
             RecordsGrid.AllowUserToAddRows = false;
             RecordsGrid.AllowUserToDeleteRows = false;
             RecordsGrid.EditMode = DataGridViewEditMode.EditProgrammatically;
-            //where data is gotten from          
+            // Smooth scrolling settings
+            RecordsGrid.ScrollBars = ScrollBars.Vertical;
+
+            // Enable double buffering for smooth rendering
+            typeof(DataGridView).InvokeMember(
+                "DoubleBuffered",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.SetProperty,
+                null,
+                RecordsGrid,
+                new object[] { true }
+            );
+            //where data is coming from and how its sorted (by date with the most recent at the top)
             RecordsGrid.DataSource = null;
-            RecordsGrid.DataSource = Jobs.OrderByDescending(j => j.Date).ToList();// Orders the records by date .(NB:RecordsGrid.DataSource is always expecting a List  ) 
+            RecordsGrid.DataSource = Jobs.OrderByDescending(j => j.Date).ToList();
 
+            // Force grid to finish painting
+            RecordsGrid.Refresh();
+            Application.DoEvents(); // Process any pending paint events
 
+            // highlight finished jobs
             HighlightFinishedJobs();
 
-
+           
         }
+       
         private void ClearFields() // clears the fields after a record is entered 
         {
             Clientnames.Clear();
