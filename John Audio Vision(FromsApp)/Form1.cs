@@ -1,83 +1,52 @@
-using Microsoft.VisualBasic;
 using System;
-using System.IO;// added for saving and loading data
-using System.Linq; // added since i am using LINQ for filtering
+using System.IO;
+using System.Linq;
 using System.Media;
-using System.Net.Sockets;
-using System.Text.Json;  // added for saving and loading data
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
-
+using System.Text.Json;
+using System.Windows.Forms;
 
 namespace John_Audio_Vision_FromsApp_
 {
     public partial class Form1 : Form
-
     {
-        private bool isEditing = false; // variable to control the state of my buttons
+        private bool isEditing = false;
+        private string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JohnAudioVision", "jobs.json");
+        private List<RepairJob> Jobs = new List<RepairJob>();
 
-
-
-        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JohnAudioVision", "jobs.json");//global variable for storing our data
-
-        //saving our data
-        private void SaveJobs()
-        {
-            try //save data to jobs.json file 
-            {
-                string json = JsonSerializer.Serialize(Jobs, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-                File.WriteAllText(filePath, json);
-            }
-            catch (Exception ex) // give user feedback if there is something that happen / or they did something that stops the process.It should not just crash 
-            {
-                SystemSounds.Exclamation.Play();
-                MessageBox.Show(
-                    "Error saving data.\n\n" + ex.Message,
-                    "Save Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-            }
-        }
-        List<RepairJob> Jobs = new List<RepairJob>();  //Global variable placed outside of contructor so it can be accessed by other methods .Where all records are stored
-
-        public Form1() // our constructor to create our object based on our blueprint (RepairJob class) and call load method 
+        public Form1()
         {
             InitializeComponent();
-
-            // connect the Shown event
             this.Shown += Form1_Shown;
-
-            // CREATE DIRECTORY HERE - RIGHT AFTER InitializeComponent()
-            string directory = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
+            string dir = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
             LoadJobs();
             RefreshGrid();
         }
-        private void Form1_Shown(object sender, EventArgs e)
+
+        private void Form1_Shown(object sender, EventArgs e) => RefreshGrid();
+
+        private void SaveJobs()
         {
-            // Force a refresh of the grid after the form is fully visible
-            RefreshGrid();
+            try
+            {
+                string json = JsonSerializer.Serialize(Jobs, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(filePath, json);
+            }
+            catch (Exception ex)
+            {
+                SystemSounds.Exclamation.Play();
+                MessageBox.Show($"Error saving data.\n\n{ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
-        //Loading our data
+
         private void LoadJobs()
         {
-            try // tries to read and load the data 1st then show feedback if there is any issue but the system will not crash and i new list is made
+            try
             {
                 if (File.Exists(filePath))
                 {
                     string json = File.ReadAllText(filePath);
-
-                    Jobs = JsonSerializer.Deserialize<List<RepairJob>>(json)
-                           ?? new List<RepairJob>();
+                    Jobs = JsonSerializer.Deserialize<List<RepairJob>>(json) ?? new List<RepairJob>();
                 }
                 else
                 {
@@ -87,13 +56,7 @@ namespace John_Audio_Vision_FromsApp_
             catch (Exception ex)
             {
                 SystemSounds.Exclamation.Play();
-                MessageBox.Show(
-                    "Error loading saved data.\n\nA new empty list will be created.\n\n" + ex.Message,
-                    "Load Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
+                MessageBox.Show($"Error loading saved data.\n\nA new empty list will be created.\n\n{ex.Message}", "Load Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 Jobs = new List<RepairJob>();
             }
         }
@@ -102,24 +65,13 @@ namespace John_Audio_Vision_FromsApp_
         {
             try
             {
-                File.Copy(filePath, "backup_jobs.json", true);// try to copy data from jobs.json to backup_jobs.json
-
-                MessageBox.Show(
-                    "Backup created successfully.",
-                    "Backup Complete",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                File.Copy(filePath, "backup_jobs.json", true);
+                MessageBox.Show("Backup created successfully.", "Backup Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 SystemSounds.Exclamation.Play();
-                MessageBox.Show(
-                    "Backup failed.\n\n" + ex.Message,
-                    "Backup Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
+                MessageBox.Show($"Backup failed.\n\n{ex.Message}", "Backup Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -127,104 +79,61 @@ namespace John_Audio_Vision_FromsApp_
         {
             try
             {
-                if (!File.Exists("backup_jobs.json")) // check if the backup_jobs.json file is not found the user will get feedback 
+                if (!File.Exists("backup_jobs.json"))
                 {
                     SystemSounds.Exclamation.Play();
-                    MessageBox.Show(
-                        "No backup file found.",
-                        "Restore Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
+                    MessageBox.Show("No backup file found.", "Restore Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-
                 File.Copy("backup_jobs.json", filePath, true);
-
                 LoadJobs();
                 RefreshGrid();
-
-                MessageBox.Show(
-                    "Data restored successfully.",
-                    "Restore Complete",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                MessageBox.Show("Data restored successfully.", "Restore Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 SystemSounds.Exclamation.Play();
-                MessageBox.Show(
-                    "Restore failed.\n\n" + ex.Message,
-                    "Restore Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
+                MessageBox.Show($"Restore failed.\n\n{ex.Message}", "Restore Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             HighlightFinishedJobs();
-
         }
-
 
         private void HighlightFinishedJobs()
         {
             foreach (DataGridViewRow row in RecordsGrid.Rows)
             {
-                RepairJob job = row.DataBoundItem as RepairJob;
-
-                if (job != null && job.Status == "Finished")
-                    row.DefaultCellStyle.BackColor = Color.LightGreen;
-                else
-                    row.DefaultCellStyle.BackColor = Color.White;
+                if (row.DataBoundItem is RepairJob job)
+                    row.DefaultCellStyle.BackColor = job.Status == "Finished" ? Color.LightGreen : Color.White;
             }
         }
 
-
-
-
-
-        private void RefreshGrid() // clears the grid and displays data after pressing the enter button , also checks if the repair job is finished then colours it green if done 
+        private void RefreshGrid()
         {
-
-            RecordsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill; // makes more room for text
-            RecordsGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True; // text wrapping so i dont need to hover anymore to see full text 
-            RecordsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;// cells grow to fit text when wrapping
-            RecordsGrid.MultiSelect = false; //only can select one record at a time
-            RecordsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect; // select the whole row not indivial rows 
+            RecordsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            RecordsGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            RecordsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            RecordsGrid.MultiSelect = false;
+            RecordsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             RecordsGrid.RowHeadersVisible = false;
-            // prevent user from making any changes directly from the grid and make to display only
             RecordsGrid.ReadOnly = true;
             RecordsGrid.AllowUserToAddRows = false;
             RecordsGrid.AllowUserToDeleteRows = false;
             RecordsGrid.EditMode = DataGridViewEditMode.EditProgrammatically;
-            // Smooth scrolling settings
             RecordsGrid.ScrollBars = ScrollBars.Vertical;
 
-            // Enable double buffering for smooth rendering
-            typeof(DataGridView).InvokeMember(
-                "DoubleBuffered",
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.SetProperty,
-                null,
-                RecordsGrid,
-                new object[] { true }
-            );
-            //where data is coming from and how its sorted (by date with the most recent at the top)
+            // Smooth scrolling via double buffering
+            typeof(DataGridView).InvokeMember("DoubleBuffered",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty,
+                null, RecordsGrid, new object[] { true });
+
             RecordsGrid.DataSource = null;
             RecordsGrid.DataSource = Jobs.OrderByDescending(j => j.Date).ToList();
-
-            // Force grid to finish painting
             RecordsGrid.Refresh();
-            Application.DoEvents(); // Process any pending paint events
-
-            // highlight finished jobs
+            Application.DoEvents();
             HighlightFinishedJobs();
-
-           
         }
-       
-        private void ClearFields() // clears the fields after a record is entered 
+
+        private void ClearFields()
         {
             Clientnames.Clear();
             txtContact.Clear();
@@ -235,79 +144,37 @@ namespace John_Audio_Vision_FromsApp_
             radFinished.Checked = false;
             radNotStarted.Checked = false;
             Fprice.Value = 0;
-
             dateTimePicker1.Value = DateTime.Now;
         }
-        private bool IsValidPhoneNumber(string phoneNumber)//method to make sure the user only puts numbers , spaces, dashes, parentheses, and plus sign for in the contact textfield
 
+        private bool IsValidPhoneNumber(string phoneNumber)
+            => System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, @"^[\d\s\-\(\)\+]+$");
+
+        private void Enterbutton_Click(object sender, EventArgs e)
         {
-
-            return System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, @"^[\d\s\-\(\)\+]+$");
-        }
-
-        private void Enterbutton_Click(object sender, EventArgs e) // Event handler for when the user press the enter button
-        {
-            if (isEditing) // if the editing mode is on and the user tries to click the button then theyll get a message
+            if (isEditing)
             {
                 SystemSounds.Exclamation.Play();
-                MessageBox.Show("Finish editing first.", "Editing Mode",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Finish editing first.", "Editing Mode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-
-            if (string.IsNullOrWhiteSpace(Clientnames.Text)) // A condition for if the client name textbox is empty
-            {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-                MessageBox.Show("Please enter client name!!!", "Missing Information" /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
-                return;
-            }
-            if (!radFinished.Checked && !radNotStarted.Checked)// if the user has not selected a job status ,they will be shown a message telling them to be pick one
-            {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-                MessageBox.Show("Please select job status !!!", "Missing Information" /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-
-            }
+            // Validations
+            if (string.IsNullOrWhiteSpace(Clientnames.Text))
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Please enter client name!!!", "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (!radFinished.Checked && !radNotStarted.Checked)
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Please select job status !!!", "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             if (string.IsNullOrWhiteSpace(txtContact.Text))
-            {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-                MessageBox.Show("Enter contact number !!!", "Missing Information" /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            if (!IsValidPhoneNumber(txtContact.Text)) // error mesaage to pop up if there is an invalid inputs in the contact textfield (input is not numbers , spaces, dashes, parentheses, and plus sign)
-            {
-                SystemSounds.Exclamation.Play();
-                MessageBox.Show("Please enter a valid contact number (digits, spaces, dashes only)",
-                    "Invalid Format", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Enter contact number !!!", "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (!IsValidPhoneNumber(txtContact.Text))
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Please enter a valid contact number (digits, spaces, dashes only)", "Invalid Format", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             if (string.IsNullOrWhiteSpace(txtItem.Text))
-            {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-                MessageBox.Show("Enter item name !!!", "Missing Information" /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Enter item name !!!", "Missing Information", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (Fprice.Value < 0)
+            { SystemSounds.Exclamation.Play(); MessageBox.Show("Price cannot be negative!", "Invalid Price", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
 
-            if (Fprice.Value < 0) // valiadtion for the price, so price can never be negative
-            {
-                SystemSounds.Exclamation.Play();
-                MessageBox.Show("Price cannot be negative!", "Invalid Price",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string status = "";
-
-            if (radFinished.Checked)
-                status = "Finished";
-            else
-                status = "Not Started";
-
-            RepairJob job = new RepairJob() // this is for inputting the values for each variable/property 
+            string status = radFinished.Checked ? "Finished" : "Not Started";
+            RepairJob job = new RepairJob
             {
                 ClientName = Clientnames.Text,
                 Contact = txtContact.Text,
@@ -319,9 +186,7 @@ namespace John_Audio_Vision_FromsApp_
                 Date = dateTimePicker1.Value,
                 Status = status
             };
-
-            Jobs.Add(job); // a new record is inserted into the list 
-
+            Jobs.Add(job);
             RefreshGrid();
             ClearFields();
             SaveJobs();
@@ -329,51 +194,30 @@ namespace John_Audio_Vision_FromsApp_
 
         private void RecordsGrid_SelectionChanged(object sender, EventArgs e)
         {
-            // Don't fill fields if currently editing
-            if (isEditing)
-                return;
-
-            if (RecordsGrid.SelectedRows.Count == 0)
+            if (isEditing || RecordsGrid.SelectedRows.Count == 0) return;
+            if (RecordsGrid.SelectedRows[0].DataBoundItem is RepairJob job)
             {
-                ClearFields();
-                return;
+                Clientnames.Text = job.ClientName;
+                txtContact.Text = job.Contact;
+                txtAddress.Text = job.Address;
+                txtItem.Text = job.ItemName;
+                txtIssue.Text = job.Issue;
+                txtJob.Text = job.JobDone;
+                Fprice.Value = job.Price;
+                dateTimePicker1.Value = job.Date;
+                radFinished.Checked = job.Status == "Finished";
+                radNotStarted.Checked = job.Status == "Not Started";
             }
-
-            RepairJob job = RecordsGrid.SelectedRows[0].DataBoundItem as RepairJob;
-
-            if (job == null)
-                return;
-
-            // Fill fields (where to get values)
-            Clientnames.Text = job.ClientName;
-            txtContact.Text = job.Contact;
-            txtAddress.Text = job.Address;
-            txtItem.Text = job.ItemName;
-            txtIssue.Text = job.Issue;
-            txtJob.Text = job.JobDone;
-            Fprice.Value = job.Price;
-            dateTimePicker1.Value = job.Date;
-            radFinished.Checked = job.Status == "Finished";
-            radNotStarted.Checked = job.Status == "Not Started";
         }
-
 
         private void EnableEditMode()
         {
             isEditing = true;
-
-            // Disable grid to prevent row switching
             RecordsGrid.Enabled = false;
-
-            // Disable other buttons
             Enterbutton.Enabled = false;
             btnDelete.Enabled = false;
-
-            // Visual feedback
             Enterbutton.BackColor = Color.LightGray;
             btnDelete.BackColor = Color.LightGray;
-
-            // Change Edit button to Save button
             edit_button.Text = "Save Changes";
             edit_button.BackColor = Color.LightGreen;
         }
@@ -381,88 +225,34 @@ namespace John_Audio_Vision_FromsApp_
         private void DisableEditMode()
         {
             isEditing = false;
-
-            // Re-enable grid
             RecordsGrid.Enabled = true;
-
-            // Re-enable buttons
             Enterbutton.Enabled = true;
             btnDelete.Enabled = true;
-
-            // Reset colors
             Enterbutton.BackColor = Color.Green;
             btnDelete.BackColor = Color.Red;
-            edit_button.BackColor = Color.Orange;
-
-            // Change back to Edit button
             edit_button.Text = "EDIT";
             edit_button.BackColor = Color.Orange;
-
             RecordsGrid.ClearSelection();
         }
-
-
-
-
 
         private void edit_button_Click(object sender, EventArgs e)
         {
             if (isEditing)
             {
-                //in editmode and User is finishing their edit
-
-                // Validation
-                if (string.IsNullOrWhiteSpace(Clientnames.Text))
+                // Validate before saving edits
+                if (string.IsNullOrWhiteSpace(Clientnames.Text) ||
+                    (!radFinished.Checked && !radNotStarted.Checked) ||
+                    string.IsNullOrWhiteSpace(txtContact.Text) ||
+                    !IsValidPhoneNumber(txtContact.Text) ||
+                    string.IsNullOrWhiteSpace(txtItem.Text) ||
+                    Fprice.Value < 0)
                 {
                     SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Client name cannot be empty!", "Validation Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Please correct the highlighted fields.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                if (!radFinished.Checked && !radNotStarted.Checked)
-                {
-                    SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Please select job status!", "Validation Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtContact.Text))
-                {
-                    SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Contact number cannot be empty!", "Validation Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                if (!IsValidPhoneNumber(txtContact.Text))
-                {
-                    SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Please enter a valid contact number!",
-                        "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtItem.Text))
-                {
-                    SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Item name cannot be empty!", "Validation Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-                if (Fprice.Value < 0)
-                {
-                    SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Price cannot be negative!", "Invalid Price",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Get the original job and update
-                RepairJob originalJob = RecordsGrid.SelectedRows[0].DataBoundItem as RepairJob;
-
-                if (originalJob != null)
+                if (RecordsGrid.SelectedRows[0].DataBoundItem is RepairJob originalJob)
                 {
                     originalJob.ClientName = Clientnames.Text;
                     originalJob.Contact = txtContact.Text;
@@ -478,28 +268,19 @@ namespace John_Audio_Vision_FromsApp_
                     RefreshGrid();
                     ClearFields();
                     DisableEditMode();
-
-                    MessageBox.Show("Job updated successfully!", "Update Complete",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Job updated successfully!", "Update Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
-            else
+            else // Enter edit mode
             {
-                //when clicked edit button
-
                 if (RecordsGrid.SelectedRows.Count == 0)
                 {
                     SystemSounds.Exclamation.Play();
-                    MessageBox.Show("Select a record to edit", "No Record Selected",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Select a record to edit", "No Record Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-
-                RepairJob jobToEdit = RecordsGrid.SelectedRows[0].DataBoundItem as RepairJob;
-
-                if (jobToEdit != null)
+                if (RecordsGrid.SelectedRows[0].DataBoundItem is RepairJob jobToEdit)
                 {
-                    // Fill fields when edit starts
                     Clientnames.Text = jobToEdit.ClientName;
                     txtContact.Text = jobToEdit.Contact;
                     txtAddress.Text = jobToEdit.Address;
@@ -510,111 +291,62 @@ namespace John_Audio_Vision_FromsApp_
                     dateTimePicker1.Value = jobToEdit.Date;
                     radFinished.Checked = jobToEdit.Status == "Finished";
                     radNotStarted.Checked = jobToEdit.Status == "Not Started";
-
                     EnableEditMode();
                 }
             }
-
         }
 
-
-        private void finButton_Click(object sender, EventArgs e) //Event handler for when the user filters jobs based on job status
+        private void finButton_Click(object sender, EventArgs e)
         {
-            var finishedJobs = Jobs.Where(j => j.Status == "Finished").ToList(); // if the job status is "Finished" , the job is added to the list of FinishedJobs
-
+            var finishedJobs = Jobs.Where(j => j.Status == "Finished").ToList();
             RecordsGrid.DataSource = null;
             RecordsGrid.DataSource = finishedJobs;
-            foreach (DataGridViewRow row in RecordsGrid.Rows) // colours the finished jobs green
-            {
-                RepairJob job = row.DataBoundItem as RepairJob;
-
-                if (job != null && job.Status == "Finished")
-                {
-                    row.DefaultCellStyle.BackColor = Color.LightGreen;
-                }
-                else
-                {
-                    row.DefaultCellStyle.BackColor = Color.White;
-                }
-            }
-
             HighlightFinishedJobs();
-
         }
 
-        private void AllButton_Click(object sender, EventArgs e)
-        {
-            RefreshGrid();
-        }
+        private void AllButton_Click(object sender, EventArgs e) => RefreshGrid();
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            string searchTerm = txtSearch.Text.ToLower();// to store user input for
-                                                         // what to search
-
+            string searchTerm = txtSearch.Text.ToLower();
             if (string.IsNullOrWhiteSpace(searchTerm))
             {
-                RefreshGrid(); // Show all if search is empty
+                RefreshGrid();
                 return;
             }
-
-            var searchResults = Jobs.Where(j =>
+            var results = Jobs.Where(j =>
                 j.ClientName.ToLower().Contains(searchTerm) ||
                 j.Contact.ToLower().Contains(searchTerm) ||
-                j.ItemName.ToLower().Contains(searchTerm)
-            ).ToList(); // all records that contain the string stored in the searchTerm string will be put in a list which is searchResults 
-
-            RecordsGrid.DataSource = null;// refreshes the grid
-            RecordsGrid.DataSource = searchResults;// shows all likelly results
-
-            foreach (DataGridViewRow row in RecordsGrid.Rows)
-            {
-                RepairJob job = row.DataBoundItem as RepairJob;
-                if (job != null)
-                {
-                    row.DefaultCellStyle.BackColor = job.Status == "Finished" ? Color.LightGreen : Color.White;
-                }
-            }
-
-            if (searchResults.Count == 0)
-            {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-
-                MessageBox.Show("No jobs found matching your search.", "No match " /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                RefreshGrid();
-            }
+                j.ItemName.ToLower().Contains(searchTerm)).ToList();
+            RecordsGrid.DataSource = null;
+            RecordsGrid.DataSource = results;
             HighlightFinishedJobs();
-
-        }
-
-        private void btnDelete_Click(object sender, EventArgs e) // delete event handler
-        {
-            if (isEditing) // if the editing mode is on and the user tries to click the button then theyll get a message
+            if (results.Count == 0)
             {
                 SystemSounds.Exclamation.Play();
-                MessageBox.Show("Finish editing first.", "Editing Mode",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No jobs found matching your search.", "No match", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RefreshGrid();
+            }
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (isEditing)
+            {
+                SystemSounds.Exclamation.Play();
+                MessageBox.Show("Finish editing first.", "Editing Mode", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            if (RecordsGrid.SelectedRows.Count == 0) // error message if the user clicks the delete button without selecting a record first  
+            if (RecordsGrid.SelectedRows.Count == 0)
             {
-                SystemSounds.Exclamation.Play();// sound for messageBox pop up
-                MessageBox.Show("Select a record first", "No record selected " /*What shows up at the messageBox header*/, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SystemSounds.Exclamation.Play();
+                MessageBox.Show("Select a record first", "No record selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            // Confirm deletion
-            DialogResult result = MessageBox.Show(
-                "Are you sure you want to delete this job? ",
-                "Confirm Delete",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning
-            );
-            if (result == DialogResult.Yes)
+            if (MessageBox.Show("Are you sure you want to delete this job?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                RepairJob job = RecordsGrid.SelectedRows[0].DataBoundItem as RepairJob; Jobs.Remove(job);
-
+                if (RecordsGrid.SelectedRows[0].DataBoundItem is RepairJob job)
+                    Jobs.Remove(job);
                 SaveJobs();
                 RefreshGrid();
             }
@@ -622,23 +354,11 @@ namespace John_Audio_Vision_FromsApp_
 
         private void btnCancelEdit_Click(object sender, EventArgs e)
         {
-            if (isEditing)
+            if (isEditing && MessageBox.Show("Cancel editing? Any unsaved changes will be lost.", "Confirm Cancel", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                DialogResult result = MessageBox.Show(
-                    "Cancel editing? Any unsaved changes will be lost.",
-                    "Confirm Cancel",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question
-                );
-
-                if (result == DialogResult.Yes)
-                {
-                    DisableEditMode();
-                    ClearFields();
-                }
+                DisableEditMode();
+                ClearFields();
             }
         }
     }
 }
-
-
