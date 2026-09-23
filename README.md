@@ -8,12 +8,17 @@ Customer records were managed manually on paper. Finding repair history required
 ## 💡 The Solution
 A desktop application with full CRUD functionality, instant search, automatic saving, and backup/restore support.
 
-## ✨ Features
+✨ Features
+
 - Full CRUD operations
 - Multi-field search (name, contact, item)
-- Filter by job status
+- Filter by job status (Finished / Not Started)
 - JSON data persistence
-- Backup & restore functionality
+- Robust Backup & Restore system
+- Silent auto-backup on launch when USB is inserted
+- Manual backup with multiple USB drive detection
+- One-click Undo Restore with pre-restore snapshots
+- Automatic backup reminders (banner & popup)
 - Input validation (Regex-based phone validation)
 - Color-coded completed jobs
 - Edit mode with state management
